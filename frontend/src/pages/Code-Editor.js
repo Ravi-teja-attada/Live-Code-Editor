@@ -12,7 +12,7 @@ import { toast } from "react-toastify";
 
 function CodeEditor() {
   const navigate = useNavigate();
-  const codeRef = useRef(null)
+  const codeRef = useRef(null);
   const socketRef = useRef(null);
   const location = useLocation();
   const { roomId } = useParams();
@@ -20,10 +20,15 @@ function CodeEditor() {
   const [users, setUsers] = useState([]);
 
   useEffect(() => {
-    async function clientInit() {
+    const clientInit = async () => {
       socketRef.current = await initializeSocket();
       socketRef.current.on("connection_error", (err) => handleError(err));
       socketRef.current.on("connection_failed", (err) => handleError(err));
+
+      socketRef.current.emit(Actions.JOIN, {
+        roomId,
+        username: location.state?.username,
+      });
 
       socketRef.current.on(
         Actions.JOINED,
@@ -33,7 +38,10 @@ function CodeEditor() {
             console.log(`${username} joined`);
           }
           setUsers(() => [...clients]);
-          socketRef.current.emit(Actions.SYNC_CODE, {code:codeRef.current, socketId})
+          socketRef.current.emit(Actions.SYNC_CODE, {
+            code: codeRef.current,
+            socketId,
+          });
         }
       );
 
@@ -49,19 +57,12 @@ function CodeEditor() {
         toast.error("Socket connection failed try again later");
         navigate("/");
       }
-
-      socketRef.current.emit(Actions.JOIN, {
-        roomId,
-        username: location.state.username,
-      });
-    }
+    };
 
     clientInit();
 
     return () => {
       if (socketRef.current) {
-        socketRef.current.off(Actions.JOINED);
-        socketRef.current.off(Actions.DISCONNECTED);
         socketRef.current.disconnect();
       }
     };
@@ -74,6 +75,7 @@ function CodeEditor() {
   }
 
   async function inviteUser() {
+    console.log(users);
     try {
       await navigator.clipboard.writeText(roomId);
       toast.success("Room Id copied");
@@ -82,11 +84,11 @@ function CodeEditor() {
     }
   }
 
-  const leaveRoom = ()=>{
-    navigate('/')
-  }
+  const leaveRoom = () => {
+    navigate("/");
+  };
 
-  const userList = users.map((user) => <h4>{user.username}</h4>);
+  const userList = users.map((user) => <li>{user.username}</li>);
   return (
     <>
       <div className="ide_wrapper">
@@ -99,10 +101,21 @@ function CodeEditor() {
             <button className="invite_button" onClick={inviteUser}>
               Invite
             </button>
-            <button className="exit_button" onClick={leaveRoom}>Leave</button>
+            <button className="exit_button" onClick={leaveRoom}>
+              Leave
+            </button>
           </div>
         </div>
-        <Editor socketRef={socketRef} roomId={roomId} onCodeChange={(code)=>{codeRef.current=code}} />
+        
+        <Editor
+          socketRef={socketRef}
+          roomId={roomId}
+          onCodeChange={(code) => {
+            codeRef.current = code;
+          }}
+        />
+        
+        
       </div>
     </>
   );
