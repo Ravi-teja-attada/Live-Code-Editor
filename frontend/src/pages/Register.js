@@ -9,6 +9,7 @@ function Login() {
   const [inputPwd, setPassword] = useState("");
 
   const navigate = useNavigate();
+  // Function for handling the registration process
   const handleRegister = async () => {
     function isValidString(input) {
       // Regular expression to check if the string adheres to the specified conditions
@@ -30,6 +31,8 @@ function Login() {
       if(inputPwd.length < 4){toast.error('Password cannot be less than 4 letters '); return}
       if(inputPwd.endsWith('@')){toast.error('Password cannot end with @'); return}
       if(!isValidString(inputPwd)){toast.error('Password can only contain letters, numbers and @'); return}
+
+      // Send a registration request to the server
       await axios.post("/api/user/register", {
         username: inputName,
         password: inputPwd,
@@ -38,6 +41,7 @@ function Login() {
       navigate('/login')
       
     } catch (err) {
+      // Display an error message for registration failure
       toast.error("Something went wrong, try with another username");
     }
   };

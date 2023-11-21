@@ -3,26 +3,33 @@ import { v4 as uuid } from "uuid";
 import { toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 import { useNavigate, Link } from "react-router-dom";
-// import jwt from 'jsonwebtoken'
+
 import axios from '../axios'
 
 function Home() {
   
   const [roomId, setRoomId] = useState("");
   const navigate = useNavigate();
+
+  // Retrieve the username from localStorage
   const username = localStorage.getItem('username')
 
+  // Effect for authenticating the user session
   useEffect(() => {
    const authenticate = async()=>{
+    // Retrieve the refresh token from localStorage
       const refreshToken = localStorage.getItem('refreshToken');
     if (refreshToken) {
       try {
+        // Verify the refresh token with the server
         const user = await axios.post('/api/user/verifyToken',{
           token: refreshToken
         })
         if(user) return
       } catch (err) {
+        // Handle session expiration error
         toast.error('Session expired')
+        navigate('/login')
       }
         
     }else{
@@ -34,6 +41,7 @@ function Home() {
     
   }, []);
 
+  // Function for creating a new room
   const createRoom = (e) => {
     e.preventDefault();
     const id = uuid();
@@ -41,12 +49,14 @@ function Home() {
     toast.success("Room created");
   };
 
+  // Function for joining an existing room
   const joinRoom = (e) => {
     if (!roomId) {
       toast.error("Invalid credentials");
       return;
     }
 
+    // Navigate to the editor page with the provided room ID and username
     navigate(`/editor/${roomId}`, {
       state: {
         username,
@@ -54,6 +64,7 @@ function Home() {
     });
   };
 
+  // Function to handle the "Enter" key press for joining a room
   const handleEnter = (e)=>{
     if(e.code === 'Enter'){
       joinRoom()

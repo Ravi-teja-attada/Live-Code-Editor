@@ -9,6 +9,8 @@ function Login() {
   const [inputPwd, setPassword] = useState("");
 
   const navigate = useNavigate();
+
+  // Function for handling the login process
   const handleLogin = async () => {
     try {
       const response = await axios.post("/api/user/login", {
@@ -16,20 +18,25 @@ function Login() {
         password: inputPwd,
       });
 
+       // Extract username and refresh token from the response data
       const { username, refreshToken } = response.data;
+
+      // Store username and refresh token in localStorage
       localStorage.setItem("username", username);
       localStorage.setItem("refreshToken", refreshToken);
+
+      // Navigate to the home page with the authenticated username
       navigate(`/`, {
         state: {
           username,
         },
       });
-      console.log(username);
-      console.log(refreshToken);
     } catch (err) {
+      // Display an error message for invalid credentials
       toast.error("Invalid credentials");
     }
   };
+  // Function to handle the "Enter" key press for logging in
   const handleEnter = (e)=>{
     if(e.code === 'Enter'){
       handleLogin()

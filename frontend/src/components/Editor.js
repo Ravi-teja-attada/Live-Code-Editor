@@ -9,11 +9,16 @@ import "codemirror/addon/edit/closetag";
 import "codemirror/addon/edit/closebrackets";
 import Actions from "../Actions";
 
+// Editor component for handling code editing
 const Editor = ({ socketRef, roomId, onCodeChange }) => {
   const [language, setLanguage] = useState("JavaScript");
   const [dropdown, setDropdown] = useState("JavaScript")
+
+  // Refs for accessing the textarea and CodeMirror editor instances
   const textareaRef = useRef(null);
   const editorRef = useRef(null);
+
+    // Effect for initializing the CodeMirror editor when the component mounts or language changes
   useEffect(() => {
     async function init() {
       editorRef.current = Codemirror.fromTextArea(
@@ -25,11 +30,12 @@ const Editor = ({ socketRef, roomId, onCodeChange }) => {
           lineNumbers: true,
         }
       );
-
+// Event listener for code changes in the editor
       editorRef.current.on("change", (instance, changes) => {
         const { origin } = changes;
         const code = instance.getValue();
         onCodeChange(code);
+      // Emit code changes to the server, excluding changes originated from setting initial code
         if (origin !== "setValue") {
           socketRef.current.emit(Actions.CODE_CHANGE, {
             roomId,
@@ -41,6 +47,7 @@ const Editor = ({ socketRef, roomId, onCodeChange }) => {
     init();
   }, [language]);
 
+  // Effect for handling incoming code changes from the server
   useEffect(() => {
     if (socketRef.current) {
       socketRef.current.on(Actions.CODE_CHANGE, ({ code }) => {
@@ -50,6 +57,7 @@ const Editor = ({ socketRef, roomId, onCodeChange }) => {
       });
     }
 
+     // Cleanup function to unsubscribe from the CODE_CHANGE event when the component unmounts
     return () => {
       // socketRef.current.off(Actions.CODE_CHANGE);
     };
@@ -82,6 +90,7 @@ const Editor = ({ socketRef, roomId, onCodeChange }) => {
             <li data-language="text/x-csrc">C</li>
             <li data-language="text/x-c++src">C++</li>
           </ul>
+          
         </div>
       </div>
       <textarea ref={textareaRef} id="codeEditor"></textarea>

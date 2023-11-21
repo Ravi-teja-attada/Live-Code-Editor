@@ -10,26 +10,36 @@ import {
 } from "react-router-dom";
 import { toast } from "react-toastify";
 
+// Main component for the code editor page
 function CodeEditor() {
   const navigate = useNavigate();
+  // Ref for storing the code editor content
   const codeRef = useRef(null);
+  // Ref for managing the socket connection
   const socketRef = useRef(null);
+  // Hook for accessing the current location object from React Router
   const location = useLocation();
+  // Hook for accessing URL parameters from React Router
   const { roomId } = useParams();
 
   const [users, setUsers] = useState([]);
 
+  // Effect for initializing the client and setting up socket events
   useEffect(() => {
     const clientInit = async () => {
       socketRef.current = await initializeSocket();
+
+      // Event listeners for handling connection errors
       socketRef.current.on("connection_error", (err) => handleError(err));
       socketRef.current.on("connection_failed", (err) => handleError(err));
 
+      // Join the room and emit a join event to the server
       socketRef.current.emit(Actions.JOIN, {
         roomId,
         username: location.state?.username,
       });
 
+      // Event listener for handling successful join events
       socketRef.current.on(
         Actions.JOINED,
         ({ clients, username, socketId }) => {
@@ -37,6 +47,7 @@ function CodeEditor() {
             toast.success(`${username} joined the room`);
             console.log(`${username} joined`);
           }
+          // Update the list of users and sync the code with the new user
           setUsers(() => [...clients]);
           socketRef.current.emit(Actions.SYNC_CODE, {
             code: codeRef.current,
@@ -45,8 +56,10 @@ function CodeEditor() {
         }
       );
 
+      // Event listener for handling user disconnections
       socketRef.current.on(Actions.DISCONNECTED, ({ socketId, username }) => {
         toast.success(`${username} left the room`);
+        // Remove the disconnected user from the list
         setUsers((prev) =>
           prev.filter((client) => client.socketId !== socketId)
         );
@@ -61,6 +74,7 @@ function CodeEditor() {
 
     clientInit();
 
+    // Cleanup function to disconnect the socket when the component unmounts
     return () => {
       if (socketRef.current) {
         socketRef.current.disconnect();
@@ -68,12 +82,14 @@ function CodeEditor() {
     };
   }, []);
 
+  // Redirect to the home page if the user is not authenticated
   if (!location.state) {
     return <Navigate to="/" />;
   } else {
     console.log("Username is", location.state.username);
   }
 
+  // Function to copy the room ID to the clipboard
   async function inviteUser() {
     console.log(users);
     try {
@@ -84,6 +100,7 @@ function CodeEditor() {
     }
   }
 
+  // Function to leave the room and navigate to the home page
   const leaveRoom = () => {
     navigate("/");
   };
